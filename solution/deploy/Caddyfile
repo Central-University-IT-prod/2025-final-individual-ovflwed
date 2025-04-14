@@ -1,0 +1,16 @@
+:80 {
+    @adimages {
+        path /ad-images/*
+    }
+    reverse_proxy @adimages minio:9000
+
+    # route /api* {
+    #     uri strip_prefix /api
+    #     reverse_proxy backend:8080
+    # }
+
+    @forbidden path /ad-images/
+    handle @forbidden {
+            respond * 403
+    }
+}

@@ -1,0 +1,104 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      POSTGRES_PORT: 5432
+      POSTGRES_HOST: db
+      POSTGRES_USER: prod
+      POSTGRES_PASSWORD: prod
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      MINIO_URL: minio:9000
+      MINIO_ACCESS_KEY: prod
+      MINIO_SECRET_KEY: prod_prod
+      CDN_URL: http://localhost/ad-images/
+    depends_on:
+      - db
+      - redis
+      - minio
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  
+  db:
+    container_name: postgres
+    image: postgres:17.3-alpine
+    environment:
+      POSTGRES_USER: prod
+      POSTGRES_PASSWORD: prod
+      PGDATA: /data/postgres
+      POSTGRES_DB: prod
+    volumes:
+      - db:/data/postgres
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -d postgres" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+  
+  redis:
+    container_name: redis
+    image: redis:7.4-alpine
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio:latest
+    command: server --console-address ":9001" /data/
+    environment:
+      MINIO_ROOT_USER: prod
+      MINIO_ROOT_PASSWORD: prod_prod
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 20s
+      retries: 3
+
+  caddy:
+    image: caddy:alpine
+    container_name: caddy
+    ports:
+      - "80:80"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+
+  bucket_creator:
+    image: minio/mc:latest
+    container_name: bucket_creator
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+        mc alias set myminio http://minio:9000 prod prod_prod &&
+        mc mb myminio/ad-images &&
+        mc anonymous set download myminio/ad-images
+      "
+  grafana:
+    image: grafana/grafana-enterprise
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    volumes:
+      - grafana-storage:/var/lib/grafana
+      - ./deploy/grafana:/etc/grafana/provisioning
+
+volumes:
+  grafana-storage:
+  minio_data:
+  caddy_data:
+  caddy_config:
+  db:

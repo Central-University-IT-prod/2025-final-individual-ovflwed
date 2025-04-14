@@ -1,0 +1,59 @@
+[tool.poetry]
+name = "solution"
+version = "0.1.0"
+description = ""
+authors = ["Ilya <phone.mas@yandex.ru>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+dishka = "^1.4.2"
+fastapi = "^0.115.8"
+uvicorn = "^0.34.0"
+asyncpg = "^0.30.0"
+redis = "^5.2.1"
+python-multipart = "^0.0.20"
+miniopy-async = "^1.21.1"
+
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.9.6"
+black = "^25.1.0"
+isort = "^6.0.0"
+mypy = "^1.15.0"
+asyncpg-stubs = "^0.30.0"
+flake8 = "^7.1.1"
+wemake-python-styleguide = "^1.0.0"
+pylint = "^3.3.4"
+
+
+[tool.poetry.group.test.dependencies]
+pytest = "^8.3.4"
+pytest-asyncio = "^0.25.3"
+httpx = "^0.28.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "S101",
+    "S104",
+    "ANN001",
+    "ANN201",
+    "D",
+    "PLR2004",
+    "FA",
+    "RUF001",
+    "ARG001",
+    "TRY002",
+    "BLE",
+    "PERF203",
+    "A005"
+]
+exclude = ["tests/**"]
